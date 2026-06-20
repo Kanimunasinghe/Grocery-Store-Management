@@ -347,12 +347,15 @@ function loadTopCustomers() {
     let startDate = $('#startDate').val();
     let endDate = $('#endDate').val();
     
+    console.log("Loading top customers...");
+    console.log("Start Date:", startDate, "End Date:", endDate);
+    
     $.ajax({
         url: customerStatsApiUrl,
         type: 'GET',
         data: {
-            start_date: startDate || null,
-            end_date: endDate || null
+            start_date: startDate && startDate.trim() ? startDate : '',
+            end_date: endDate && endDate.trim() ? endDate : ''
         },
         success: function(data) {
             console.log("Top customers loaded:", data);
@@ -360,14 +363,16 @@ function loadTopCustomers() {
         },
         error: function(error) {
             console.log("Error loading top customers:", error);
-            $('#topCustomersTable').html('<div class="alert alert-danger">Error loading customers</div>');
+            $('#topCustomersTable').html('<div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> Error loading customers. Please try again.</div>');
         }
     });
 }
 
 function displayTopCustomers(customers) {
-    if (customers.length === 0) {
-        $('#topCustomersTable').html('<div class="alert alert-info">No customer data for selected date range</div>');
+    console.log("Displaying customers count:", customers.length);
+    
+    if (!customers || customers.length === 0) {
+        $('#topCustomersTable').html('<div class="alert alert-info"><i class="fas fa-info-circle"></i> No customer data found for selected date range</div>');
         return;
     }
     
@@ -384,13 +389,17 @@ function displayTopCustomers(customers) {
             <tbody>
     `;
     
-    customers.forEach(function(customer) {
+    customers.forEach(function(customer, index) {
+        let totalSpent = customer.total_spent ? parseFloat(customer.total_spent) : 0;
+        let avgSpent = customer.avg_spent ? parseFloat(customer.avg_spent) : 0;
+        let orderCount = customer.order_count ? parseInt(customer.order_count) : 0;
+        
         tableHtml += `
             <tr>
-                <td><strong>${customer.customer_name}</strong></td>
-                <td><span class="badge bg-primary">${customer.order_count}</span></td>
-                <td>₨${formatNumber(customer.total_spent)}</td>
-                <td>₨${formatNumber(customer.avg_spent)}</td>
+                <td><strong>${customer.customer_name || 'Unknown'}</strong></td>
+                <td><span class="badge bg-primary">${orderCount}</span></td>
+                <td>₨${formatNumber(totalSpent)}</td>
+                <td>₨${formatNumber(avgSpent)}</td>
             </tr>
         `;
     });
@@ -401,8 +410,8 @@ function displayTopCustomers(customers) {
     `;
     
     $('#topCustomersTable').html(tableHtml);
+    console.log("Customers table displayed successfully");
 }
-
 // =============== INVENTORY OVERVIEW ===============
 function loadInventoryOverview() {
     $.ajax({
